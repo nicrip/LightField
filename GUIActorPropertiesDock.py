@@ -25,10 +25,12 @@ class ActorPropertiesDock(QtGui.QDockWidget):
         self.parent = parent
         self.setWindowTitle('Actor Properties')
         self.setFeatures(QtGui.QDockWidget.DockWidgetFloatable | QtGui.QDockWidget.DockWidgetMovable)
-        self.main_frame = QtGui.QFrame()
-        #self.main_frame.setStyleSheet("QFrame {background-color: rgb(255,255,255); margin:9px; border:1px solid rgb(196, 193, 189);}")
+        self.main_frame = QtGui.QWidget()
+        self.main_layout = QtGui.QVBoxLayout()
+        self.main_frame.setLayout(self.main_layout)
         self.setWidget(self.main_frame)
-        self.widgetStack = QtGui.QStackedWidget(self.main_frame)
+        self.widgetStack = QtGui.QStackedWidget()
+        self.main_layout.addWidget(self.widgetStack)
         self.uiEmptySetup()
         self.uiActorSetup()
         self.tree_object = None
@@ -38,10 +40,15 @@ class ActorPropertiesDock(QtGui.QDockWidget):
         self.widgetStack.addWidget(self.emptyStack)
 
     def uiActorSetup(self):
+        self.scroll_area = QtGui.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameStyle(QtGui.QFrame.NoFrame)
         self.actorStack = QtGui.QWidget()
-        self.widgetStack.addWidget(self.actorStack)
         self.actorLayout = QtGui.QGridLayout()
         self.actorLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.actorStack.setLayout(self.actorLayout)
+        self.scroll_area.setWidget(self.actorStack)
+        self.widgetStack.addWidget(self.scroll_area)
 
         horLine = QtGui.QFrame()
         horLine.setStyleSheet("color: rgb(196, 193, 189);")
@@ -157,8 +164,6 @@ class ActorPropertiesDock(QtGui.QDockWidget):
         horLine.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.actorLayout.addWidget(horLine,17,1,1,2)
 
-        self.actorStack.setLayout(self.actorLayout)
-
     def actorFrameAxesVisibility(self, state):
         if state == 2:
             self.tree_object.axes_visible = True
@@ -168,26 +173,32 @@ class ActorPropertiesDock(QtGui.QDockWidget):
 
     def actorFrameAxesScale(self):
         scale = self.axesSpinBox.value()
+        self.tree_object.axes_scale = scale
         self.parent.vtk_main_canvas.setActorScale(self.tree_object.axes, scale)
 
     def alphaChanged(self):
         alpha = self.alphaSpinBox.value()
+        self.tree_object.alpha = alpha
         self.parent.vtk_main_canvas.setActorOpacity(self.tree_object.actor, alpha)
 
     def pointSizeChanged(self):
         size = self.pointSizeSpinBox.value()
+        self.tree_object.point_size = size
         self.parent.vtk_main_canvas.setActorPointSize(self.tree_object.actor, size)
 
     def lineWidthChanged(self):
         width = self.lineWidthSpinBox.value()
+        self.tree_object.line_width = width
         self.parent.vtk_main_canvas.setActorLineWidth(self.tree_object.actor, width)
 
     def actorScale(self):
         scale = self.scaleSpinBox.value()
+        self.tree_object.scale = scale
         self.parent.vtk_main_canvas.setActorScale(self.tree_object.actor, scale)
 
     def modeChange(self):
         mode = self.modeComboBox.currentText()
+        self.tree_object.mode = mode
         if mode == 'Surface':
             self.parent.vtk_main_canvas.setActorToSurface(self.tree_object.actor)
         elif mode == 'Wireframe':
@@ -206,6 +217,7 @@ class ActorPropertiesDock(QtGui.QDockWidget):
             self.parent.vtk_main_canvas.setActorColor(self.tree_object.actor, r, g, b)
         r, g, b = self.parent.vtk_main_canvas.getActorColor(self.tree_object.actor)
         color_text = '(' + str(int(r*255)) + ', ' + str(int(g*255)) + ', ' + str(int(b*255)) + ')'
+        self.tree_object.color = [r, g, b]
         self.actorColorValue.setText(color_text)
 
     def textureSet(self):
@@ -230,22 +242,43 @@ class ActorPropertiesDock(QtGui.QDockWidget):
                 self.frameAxesVisibilityCheckBox.setCheckState(2)
             else:
                 self.frameAxesVisibilityCheckBox.setCheckState(0)
-            self.axesSpinBox.setValue(self.parent.vtk_main_canvas.getActorScale(self.tree_object.axes)[0])
-            self.alphaSpinBox.setValue(self.parent.vtk_main_canvas.getActorOpacity(self.tree_object.actor))
-            self.pointSizeSpinBox.setValue(self.parent.vtk_main_canvas.getActorPointSize(self.tree_object.actor))
-            self.lineWidthSpinBox.setValue(self.parent.vtk_main_canvas.getActorLineWidth(self.tree_object.actor))
-            self.scaleSpinBox.setValue(self.parent.vtk_main_canvas.getActorScale(self.tree_object.actor)[0])
-            edge, mode = self.parent.vtk_main_canvas.getActorRenderMode(self.tree_object.actor)
-            if edge == 1:
-                self.modeComboBox.setCurrentIndex(2)
-            elif mode == 0: # points
-                self.modeComboBox.setCurrentIndex(3)
-            elif mode == 1: # wireframe
-                self.modeComboBox.setCurrentIndex(1)
-            elif mode == 2: # surface
+            self.axesSpinBox.setValue(self.tree_object.axes_scale)
+            self.alphaSpinBox.setValue(self.tree_object.alpha)
+            self.pointSizeSpinBox.setValue(self.tree_object.point_size)
+            self.lineWidthSpinBox.setValue(self.tree_object.line_width)
+            self.scaleSpinBox.setValue(self.tree_object.scale)
+            if self.tree_object.mode == 'Surface':
                 self.modeComboBox.setCurrentIndex(0)
+            elif self.tree_object.mode == 'Wireframe':
+                self.modeComboBox.setCurrentIndex(1)
+            elif self.tree_object.mode == 'Surface & Edges':
+                self.modeComboBox.setCurrentIndex(2)
+            elif self.tree_object.mode == 'Points':
+                self.modeComboBox.setCurrentIndex(3)
             else:
                 self.modeComboBox.setCurrentIndex(0)
-            r, g, b = self.parent.vtk_main_canvas.getActorColor(self.tree_object.actor)
+            r = self.tree_object.color[0]
+            g = self.tree_object.color[1]
+            b = self.tree_object.color[2]
             color_text = '(' + str(int(r*255)) + ', ' + str(int(g*255)) + ', ' + str(int(b*255)) + ')'
             self.actorColorValue.setText(color_text)
+
+            # self.axesSpinBox.setValue(self.parent.vtk_main_canvas.getActorScale(self.tree_object.axes)[0])
+            # self.alphaSpinBox.setValue(self.parent.vtk_main_canvas.getActorOpacity(self.tree_object.actor))
+            # self.pointSizeSpinBox.setValue(self.parent.vtk_main_canvas.getActorPointSize(self.tree_object.actor))
+            # self.lineWidthSpinBox.setValue(self.parent.vtk_main_canvas.getActorLineWidth(self.tree_object.actor))
+            # self.scaleSpinBox.setValue(self.parent.vtk_main_canvas.getActorScale(self.tree_object.actor)[0])
+            # edge, mode = self.parent.vtk_main_canvas.getActorRenderMode(self.tree_object.actor)
+            # if edge == 1:
+            #     self.modeComboBox.setCurrentIndex(2)
+            # elif mode == 0: # points
+            #     self.modeComboBox.setCurrentIndex(3)
+            # elif mode == 1: # wireframe
+            #     self.modeComboBox.setCurrentIndex(1)
+            # elif mode == 2: # surface
+            #     self.modeComboBox.setCurrentIndex(0)
+            # else:
+            #     self.modeComboBox.setCurrentIndex(0)
+            # r, g, b = self.parent.vtk_main_canvas.getActorColor(self.tree_object.actor)
+            # color_text = '(' + str(int(r*255)) + ', ' + str(int(g*255)) + ', ' + str(int(b*255)) + ')'
+            # self.actorColorValue.setText(color_text)
