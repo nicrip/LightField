@@ -1,6 +1,6 @@
 # LightField - The Lightweight Field Robotics Visualizer  
 
-![](https://github.com/nicrip/LightField/blob/master/doc/LightField2.gif)  
+![](https://github.com/nicrip/LightField/blob/master/doc/LightField3.gif)  
 
 ### Overview  
 LightField is a lightweight field robotics visualizer written in Python and based on VTK and PyQT4. Scene objects are stored in a native QT tree structure, the QTreeWidget class. This tree structure allows transformations applied to the parent of a scene object to be propagated to its children in a structured manner.  
