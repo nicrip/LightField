@@ -17,8 +17,8 @@ robot
 │   torso  
 │   leftarm  
 |   rightarm  
+|   
 └── head
-|   |
 │   │   skull  
 │   │   nose  
 |   |   ears
